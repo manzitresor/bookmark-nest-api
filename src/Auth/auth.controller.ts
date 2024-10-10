@@ -7,8 +7,7 @@ export class AuthController {
 
   @Post('signin')
   signin(@Body() input: AuthDto) {
-    console.log(input);
-    return this.authService.login();
+    return this.authService.login(input);
   }
 
   @Post('signup')

@@ -7,7 +7,20 @@ import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 @Injectable({})
 export class AuthService {
   constructor(private prisma: PrismaService) {}
-  async login() {}
+  async login(dto: AuthDto) {
+    const user = await this.prisma.user.findUnique({
+      where: {
+        email: dto.email,
+      },
+    });
+    if (!user) throw new ForbiddenException('Credential not collect');
+
+    const hash = await argon2.verify(user.hash, dto.password);
+    if (!hash) throw new ForbiddenException('Credential not collect');
+    delete user.hash;
+    return user;
+  }
+
   async signup(dto: AuthDto) {
     const hash = await argon2.hash(dto.password);
     try {
@@ -16,12 +29,14 @@ export class AuthService {
           email: dto.email,
           hash,
         },
+
         select: {
           id: true,
           email: true,
           createdAt: true,
         },
       });
+
       return user;
     } catch (error) {
       if (error instanceof PrismaClientKnownRequestError) {
@@ -29,6 +44,7 @@ export class AuthService {
           throw new ForbiddenException('Credetions taken');
         }
       }
+
       throw error;
     }
   }
